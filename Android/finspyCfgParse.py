@@ -1,5 +1,5 @@
 #
-# finspy config parser finspyCfgParse (c) 2019
+# finspy config parse (c) 2019-2020
 # by Thorsten (THS) Schroeder <ths [at] ccc [dot] de>
 #
 # Parse configuration data from Finspy-APKs for Android. Based on
@@ -9,7 +9,7 @@
 # by
 #   Josh Grunzweig
 #
-# Thank you, Josh!
+# Thank you!
 #
 # ---------------------------------------------------------------------------------------------------------
 #
@@ -19,43 +19,41 @@
 #   Author: Thorsten (THS) Schroeder <ths [at] ccc [dot] de>
 #   All rights reserved.
 #
-#  Redistribution and use in source and binary forms, with or without
-#  modification, are permitted provided that the following conditions are met:
-#  
-#  * Redistributions of source code must retain the above copyright notice, this
-#	   list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright notice,
-#	   this list of conditions and the following disclaimer in the documentation
-#	   and/or other materials provided with the distribution.
-#  * Neither the name of the copyright holder nor the names of its
-#	   contributors may be used to endorse or promote products derived from
-#	   this software without specific prior written permission.
+#   Redistribution and use in source and binary forms, with or without
+#   modification, are permitted provided that the following conditions are met:
+#   * Redistributions of source code must retain the above copyright notice, this
+#    list of conditions and the following disclaimer.
+#   * Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#   * Neither the name of the copyright holder nor the names of its
+#    contributors may be used to endorse or promote products derived from
 #
-#  * NON-MILITARY-USAGE CLAUSE
-#	   Redistribution and use in source and binary form for military use and
-#	   military research is not permitted. Infringement of these clauses may
-#	   result in publishing the source code of the utilizing applications and
-#	   libraries to the public. As this software is developed, tested and
-#	   reviewed by *international* volunteers, this clause shall not be refused
-#	   due to the matter of *national* security concerns.
+#   this software without specific prior written permission.
+#   * NON-MILITARY-USAGE CLAUSE
+#    Redistribution and use in source and binary form for military use and
+#    military research is not permitted. Infringement of these clauses may
+#    result in publishing the source code of the utilizing applications and
+#    libraries to the public. As this software is developed, tested and
+#    reviewed by *international* volunteers, this clause shall not be refused
+#    due to the matter of *national* security concerns.
 #
-#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-#  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-#  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-#  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-#  SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-#  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-#  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-#  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# ---------------------------------------------------------------------------------------------------------
-
+#   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+#   DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+#   FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+#   DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+#   SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+#   CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+#   OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+#   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import sys
 import time
 import binascii
 
+# change this to False to output whole configuration strings/arrays
+pretty_print = True
 
 def parse(cfgdata, level=0):
     tlv_size = int.from_bytes(cfgdata[0:3], byteorder='little')
@@ -64,69 +62,73 @@ def parse(cfgdata, level=0):
     tlv_data = cfgdata[8:tlv_size]
 
     if tlv_type in tlv_types:
-        data = None
-
         t = tlv_types[tlv_type]
+    else:
+        t = "TlvUnknown"
 
-        tabs = "\t" * level
+    data = None
+    tabs = "\t" * level
 
-        if t == "TlvTypeMobileTargetUID":
-            data = int.from_bytes(tlv_data, byteorder='little')  # reverse?
-        elif t in ["TlvTypeMobileTrackingSendOnAnyChannel", "TlvTypeMobileTrackingTimeInterval",
-                   "TlvTypeMobileTrackingDistance", "TlvTypeMobileTargetHeartbeatEvents",
-                   "TlvTypeMobileTargetLocationChangedRange", "TlvTypeTrojanMaxInfections", "TlvTypeUserID",
-                   "TlvTypeConfigTargetPort", "TlvTypeMobileTargetHeartbeatInterval",
-                   "TlvTypeConfigAutoRemovalIfNoProxy"]:
-            data = int.from_bytes(tlv_data, byteorder='little')  # reverse?
-        elif t == "TlvTypeMobileTrojanUID":
-            data = tlv_data  # tlvData.force_encoding("BINARY").scan(/./).reverse.join.hexify.upcase.rjust(8, '0')
-            # data = binascii.hexlify(tlv_data)
-        elif t in ["TlvTypeVersion", "TlvTypeRequestID"]:
-            data = int.from_bytes(tlv_data, byteorder='little')  # revEndian(tlvData).to_s.rjust(8, '0')
-        elif t == "TlvTypeMobileTargetHeartBeatV10":
-            data = int.from_bytes(tlv_data, byteorder='little')  # parseHB(tlvData, t)
-        elif t == "TlvTypeConfigMobileAutoRemovalDateTime":
-            data = time.ctime(int.from_bytes(tlv_data, byteorder='little'))
-        elif t == "TlvTypeInstalledModules":
-            data = ""
-            data = data + "{} {}  |".format("Logging:", "On" if tlv_data[68] == 1 else "Off")
-            data = data + "  {} {}  |".format("Spy Call:", "On" if tlv_data[64] == 1 else "Off")
-            data = data + "  {} {}  |".format("Call Interception:", "On" if tlv_data[65] == 1 else "Off")
-            data = data + "  {} {}  |".format("SMS:", "On" if tlv_data[66] == 1 else "Off")
-            data = data + "  {} {}  |".format("Address Book:", "On" if tlv_data[67] == 1 else "Off")
-            data = data + "  {} {}  |".format("Tracking:", "On" if tlv_data[69] == 1 else "Off")
-            data = data + "  {} {}  |".format("Phone Logs:", "On" if tlv_data[70] == 1 else "Off")
-        else:
-            data = tlv_data
+    if t == "TlvTypeMobileTargetUID":
+        data = int.from_bytes(tlv_data, byteorder='little')  # reverse?
+    elif t in ["TlvTypeMobileTrackingSendOnAnyChannel", "TlvTypeMobileTrackingTimeInterval",
+               "TlvTypeMobileTrackingDistance", "TlvTypeMobileTargetHeartbeatEvents",
+               "TlvTypeMobileTargetLocationChangedRange", "TlvTypeTrojanMaxInfections", "TlvTypeUserID",
+               "TlvTypeConfigTargetPort", "TlvTypeMobileTargetHeartbeatInterval",
+               "TlvTypeConfigAutoRemovalIfNoProxy"]:
+        data = int.from_bytes(tlv_data, byteorder='little')  # reverse?
+    elif t == "TlvTypeMobileTrojanUID":
+        data = tlv_data  # tlvData.force_encoding("BINARY").scan(/./).reverse.join.hexify.upcase.rjust(8, '0')
+        # data = binascii.hexlify(tlv_data)
+    elif t in ["TlvTypeVersion", "TlvTypeRequestID"]:
+        data = int.from_bytes(tlv_data, byteorder='little')  # revEndian(tlvData).to_s.rjust(8, '0')
+    elif t == "TlvTypeMobileTargetHeartBeatV10":
+        data = int.from_bytes(tlv_data, byteorder='little')  # parseHB(tlvData, t)
+    elif t == "TlvTypeConfigMobileAutoRemovalDateTime":
+        data = time.ctime(int.from_bytes(tlv_data, byteorder='little'))
+    elif t == "TlvTypeInstalledModules":
+        data = ""
+        data = data + "{} {}  |".format("Logging:", "On" if tlv_data[68] == 1 else "Off")
+        data = data + "  {} {}  |".format("Spy Call:", "On" if tlv_data[64] == 1 else "Off")
+        data = data + "  {} {}  |".format("Call Interception:", "On" if tlv_data[65] == 1 else "Off")
+        data = data + "  {} {}  |".format("SMS:", "On" if tlv_data[66] == 1 else "Off")
+        data = data + "  {} {}  |".format("Address Book:", "On" if tlv_data[67] == 1 else "Off")
+        data = data + "  {} {}  |".format("Tracking:", "On" if tlv_data[69] == 1 else "Off")
+        data = data + "  {} {}  |".format("Phone Logs:", "On" if tlv_data[70] == 1 else "Off")
+    else:
+        data = tlv_data
 
-        if data:
+    if data:
 
-            s = ""
-            try:
-                s = '"' + data.decode() + '"'
-            except Exception:
-                s = data
-                pass
+        s = ""
+        try:
+            s = '"' + data.decode() + '"'
+        except Exception:
+            s = data
+            pass
 
-            # pretty print...
-            if tlv_size > 200:
-                print("{0} {1:<46} = {2}[...]".format(tabs, t, s[:16]))
+        if pretty_print == True:
+            if (pretty_print == True) and (tlv_size > 50):
+                print("{0} {1:<46} = {2}[...] ({3})".format(tabs, t, s[:16], tlv_size))
             else:
                 print("{0} {1:<46} = {2} ({3})".format(tabs, t, s, tlv_size))
+        else:
+            print("{0} {1:<46} = {2} ({3})".format(tabs, t, s, tlv_size))
 
-        if tlv_data[4:7]:
-            new_type = int.from_bytes(tlv_data[4:7], byteorder='little')
-            if new_type in tlv_types:
-                parse(tlv_data, level + 1)
+    if tlv_data[4:7]:
+        new_type = int.from_bytes(tlv_data[4:7], byteorder='little')
+        if new_type in tlv_types:
+            parse(tlv_data, level + 1)
 
-        if len(cfgdata) > tlv_size:
-            new_data = cfgdata[tlv_size:len(cfgdata) - 1]
-            parse(new_data, level)
+    if len(cfgdata) > tlv_size:
+        new_data = cfgdata[tlv_size:len(cfgdata) - 1]
+        parse(new_data, level)
 
 
 def main(ac, av):
     if ac < 2:
         print("[!] usage: {} <cfg file>".format(av[0]))
+        print("           <cfg-file>   - finspyCfgExtract.py output file")
         return
 
     print("# parsing FF config {})".format(av[1]))
