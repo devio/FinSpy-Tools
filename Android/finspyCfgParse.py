@@ -108,7 +108,7 @@ def parse(cfgdata, level=0):
             pass
 
         if pretty_print == True:
-            if (pretty_print == True) and (tlv_size > 50):
+            if (pretty_print == True) and (tlv_size > 50) and (t != "TlvTypeInstalledModules"):
                 print("{0} {1:<46} = {2}[...] ({3})".format(tabs, t, s[:16], tlv_size))
             else:
                 print("{0} {1:<46} = {2} ({3})".format(tabs, t, s, tlv_size))
